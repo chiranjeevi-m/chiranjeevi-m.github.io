@@ -1,87 +1,69 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BSNL Walkathon Registration</title>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<style>
-body { font-family: Arial; background:#f2f5f7; margin:0; padding:0; }
-.container { max-width:500px; margin:30px auto; background:#fff; padding:25px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1);}
-.header-img { display:block; margin:0 auto 20px; max-width:250px; border-radius:10px; }
-h2 { text-align:center; color:#0052a5; margin-bottom:20px;}
-input, select { width:100%; padding:12px; margin:8px 0; border-radius:6px; border:1px solid #ccc; font-size:14px; }
-input:focus, select:focus { border-color:#0052a5; outline:none; box-shadow:0 0 5px rgba(0,82,165,0.3);}
-button { width:100%; padding:14px; background-color:#0052a5; color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer; margin-top:10px;}
-button:hover { background-color:#003d7a; }
-.payment-info { background:#e6f0ff; padding:15px; border-radius:8px; margin:15px 0; text-align:center; color:#0052a5; font-weight:bold;}
-.payment-info img { margin-top:10px; max-width:200px;}
-</style>
+  <title>Walkathon Registration</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
-<div class="container">
-<img class="header-img" src="https://i.postimg.cc/6pKpVnPy/bsnl-logo.jpg" alt="BSNL Walkathon">
-<h2>BSNL Walkathon Registration</h2>
+  <h2>Register for Walkathon</h2>
+  <form id="regForm">
+    <input type="text" name="name" placeholder="Name" required><br>
+    <input type="number" name="age" placeholder="Age" required><br>
+    <input type="text" name="tshirt" placeholder="T-Shirt Size" required><br>
+    <input type="email" name="email" placeholder="Email" required><br>
+    <input type="text" name="mobile" placeholder="Mobile" required><br>
+    <input type="text" name="paymentId" placeholder="Payment Transaction ID" required><br>
+    <button type="submit">Register</button>
+  </form>
 
-<form id="regForm">
-<input type="text" name="name" placeholder="Full Name" required>
-<input type="number" name="age" placeholder="Age" required>
-<select name="tshirt" required>
-<option value="">Select T-Shirt Size</option>
-<option value="S">S</option>
-<option value="M">M</option>
-<option value="L">L</option>
-<option value="XL">XL</option>
-<option value="XXL">XXL</option>
-</select>
-<input type="email" name="email" placeholder="Email" required>
-<input type="text" name="mobile" placeholder="Mobile Number" required>
-<input type="text" name="paymentId" placeholder="Payment Transaction ID" required>
+  <script>
+    const webAppURL = 'https://script.google.com/macros/s/AKfycbyQ1Z0Pc0NsScsorAQjUOgF0hPL6Uoo1LcrY6V-DxTPHmep3-inM5cSg2906m9Dgkd1/exec'; // replace with your /exec URL
+    const SECRET_KEY = 'chiranjeevi_m'; // must match Apps Script
 
-<div class="payment-info">
-Amount: ₹250 per participant<br>
-Transfer to: <strong>enter your transaction id </strong><br>
-<img src="https://imagefa.st/images/2025/10/04/QR_B.jpeg" alt="QR Code">
-</div>
+    const form = document.getElementById('regForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = {
+        name: form.name.value,
+        age: form.age.value,
+        tshirt: form.tshirt.value,
+        email: form.email.value,
+        mobile: form.mobile.value,
+        paymentId: form.paymentId.value,
+        key: SECRET_KEY
+      };
 
-<button type="submit">Register</button>
-</form>
-</div>
+      try {
+        const res = await fetch(webAppURL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
 
-<script>
-const webAppURL = "https://script.google.com/macros/s/AKfycbyQ1Z0Pc0NsScsorAQjUOgF0hPL6Uoo1LcrY6V-DxTPHmep3-inM5cSg2906m9Dgkd1/exec";
+        const text = await res.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch(err) {
+          Swal.fire('Error', 'Server returned invalid JSON: ' + text, 'error');
+          return;
+        }
 
-document.getElementById('regForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  const formData = {
-    name: this.name.value.trim(),
-    age: this.age.value.trim(),
-    tshirt: this.tshirt.value,
-    email: this.email.value.trim().toLowerCase(),
-    mobile: this.mobile.value.trim(),
-    paymentId: this.paymentId.value.trim()
-  };
+        if (data.status === 'success') {
+          Swal.fire('Registered!', `Registration ID: ${data.registrationId}<br>Token: ${data.token}`, 'success');
+          form.reset();
+        } else if (data.status === 'duplicate') {
+          Swal.fire('Already Registered', `Registration ID: ${data.registrationId}<br>Token: ${data.token}`, 'warning');
+        } else {
+          Swal.fire('Error', data.message || 'Unknown error', 'error');
+        }
 
-  fetch(webAppURL, {
-    method:'POST',
-    headers:{ 'Content-Type':'application/json' },
-    body: JSON.stringify(formData)
-  })
-  .then(res => res.json())
-  .then(res => {
-    if(res.status === 'duplicate'){
-      Swal.fire({icon:'warning', title:'Already Registered',
-        html: res.message + '<br><b>Registration ID:</b> ' + res.registrationId + '<br><b>Token:</b> ' + res.token});
-    } else if(res.status === 'success'){
-      Swal.fire({icon:'success', title:'Registration Successful!',
-        html:'<b>Registration ID:</b> ' + res.registrationId + '<br><b>Token:</b> ' + res.token});
-      this.reset();
-    } else {
-      Swal.fire({icon:'error', title:'Error', text:'Something went wrong'});
-    }
-  })
-  .catch(err => Swal.fire({icon:'error', title:'Error', text:err.message}));
-});
-</script>
+      } catch(err) {
+        Swal.fire('Network Error', err.message, 'error');
+      }
+    });
+  </script>
 </body>
 </html>
+
 
